@@ -1,12 +1,11 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
-import MusicPlayer from './components/MusicPlayer.vue';
+
 </script>
 
 <template>
   <router-view></router-view>
-  <!-- 全局音乐播放器（常驻） -->
-  <MusicPlayer />
+
 </template>
 
 <style>

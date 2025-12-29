@@ -11,83 +11,52 @@
       </svg>
     </div>
 
-    <!-- 展开后的完整播放器（新增搜索+列表） -->
+    <!-- 展开后的完整播放器 -->
     <div class="player-content" v-if="isExpanded">
-      <!-- 搜索框 -->
-      <div class="search-box">
-        <input 
-          type="text" 
-          v-model="searchKeyword" 
-          placeholder="搜索歌曲/歌手..." 
-          class="search-input"
-          @keyup.enter="handleSearch"
-        />
-        <button class="search-btn" @click="handleSearch">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#666" stroke-width="2" stroke-linecap="round"/>
-            <path d="M21 21L16.65 16.65" stroke="#666" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- 搜索结果/歌曲列表（修复key冲突） -->
+      <!-- 歌曲列表 -->
       <div class="song-list-container">
         <div class="list-title">
-          <span>{{ searchResult.length ? '搜索结果' : '推荐歌曲' }}</span>
+          <span>我的音乐列表</span>
         </div>
         <div class="song-list">
-          <!-- 推荐歌曲分支：加根节点+唯一key="recommend" -->
-          <div v-if="!searchResult.length" key="recommend">
-            <div class="song-item" v-for="song in recommendSongs" :key="`recommend-${song.id}`" @click="playSong(song)">
-              <img :src="song.cover" alt="封面" class="song-cover" />
-              <div class="song-info">
-                <p class="song-name">{{ song.name }}</p>
-                <p class="song-singer">{{ song.singer }}</p>
-              </div>
-              <div class="play-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5V19M16 5V19" stroke="#6161ff" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
+          <div class="song-item" v-for="song in songList" :key="song.id" @click="playTargetSong(song)">
+            <img :src="song.cover" alt="歌曲封面" class="song-cover" />
+            <div class="song-info">
+              <p class="song-name">{{ song.name }}</p>
+              <p class="song-singer">{{ song.singer }}</p>
             </div>
-          </div>
-
-          <!-- 搜索结果分支：加根节点+唯一key="search" -->
-          <div v-else key="search">
-            <div class="song-item" v-for="song in searchResult" :key="`search-${song.id}`" @click="playSong(song)">
-              <img :src="song.cover" alt="封面" class="song-cover" />
-              <div class="song-info">
-                <p class="song-name">{{ song.name }}</p>
-                <p class="song-singer">{{ song.singer }}</p>
-              </div>
-              <div class="play-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 5V19M16 5V19" stroke="#6161ff" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
+            <div class="play-icon" v-if="currentPlayingSong.id !== song.id">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5V19M16 5V19" stroke="#6161ff" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="playing-tag" v-else>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="#6161ff" stroke-width="2" stroke-dasharray="4 2" />
+              </svg>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 当前播放栏 -->
-      <div class="current-play-bar">
-        <img :src="currentSong.cover" alt="封面" class="current-cover" />
+      <div class="current-play-bar" v-if="currentPlayingSong.id">
+        <img :src="currentPlayingSong.cover" alt="当前播放封面" class="current-cover" />
         <div class="current-info">
-          <p class="current-name">{{ currentSong.name }}</p>
-          <p class="current-singer">{{ currentSong.singer }}</p>
+          <p class="current-name">{{ currentPlayingSong.name }}</p>
+          <p class="current-singer">{{ currentPlayingSong.singer }}</p>
         </div>
       </div>
 
-      <!-- 播放控制 -->
+      <!-- 核心播放控制 -->
       <div class="player-controls">
-        <button class="control-btn" @click="playPrev">
+        <button class="control-btn" @click="playPrevSong" :disabled="!currentPlayingSong.id">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M19 20L9 12L19 4V20Z" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
             <path d="M5 20L15 12L5 4V20Z" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
-        <button class="control-btn play-btn" @click="togglePlay">
+        <button class="control-btn play-btn" @click="togglePlayStatus" :disabled="!currentPlayingSong.id">
           <svg v-if="!isPlaying" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 5V19M16 5V19" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
           </svg>
@@ -95,7 +64,7 @@
             <path d="M6 5H18M6 19H18" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
-        <button class="control-btn" @click="playNext">
+        <button class="control-btn" @click="playNextSong" :disabled="!currentPlayingSong.id">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M5 4L15 12L5 20V4Z" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
             <path d="M19 4L9 12L19 20V4Z" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -103,26 +72,26 @@
         </button>
       </div>
 
-      <!-- 进度条 -->
-      <div class="progress-bar">
-        <div class="progress-track" @click="setProgress">
+      <!-- 播放进度条 -->
+      <div class="progress-bar" v-if="currentPlayingSong.id">
+        <div class="progress-track" @click="adjustPlayProgress($event)">
           <div class="progress-fill" :style="{ width: `${progressPercent}%` }"></div>
           <div class="progress-thumb" :style="{ left: `${progressPercent}%` }"></div>
         </div>
         <div class="time-wrap">
-          <span class="time-text">{{ formatTime(currentTime) }}</span>
-          <span class="time-text">{{ formatTime(duration) }}</span>
+          <span class="time-text">{{ formatTime(currentPlayTime) }}</span>
+          <span class="time-text">{{ formatTime(songTotalDuration) }}</span>
         </div>
       </div>
 
       <!-- 音量控制 -->
-      <div class="volume-control">
+      <div class="volume-control" v-if="currentPlayingSong.id">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
           <path d="M15.54 8.46C16.4774 9.39758 17 10.6692 17 12C17 13.3308 16.4774 14.6024 15.54 15.54" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
           <path d="M19.07 4.93C20.9447 6.80528 22 9.34835 22 12C22 14.6516 20.9447 17.1947 19.07 19.07" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <input type="range" min="0" max="1" step="0.01" v-model="volume" class="volume-slider" @change="setVolume">
+        <input type="range" min="0" max="1" step="0.01" v-model="currentVolume" class="volume-slider" />
       </div>
     </div>
   </div>
@@ -130,167 +99,208 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { searchMusic, getSongUrl, getHotPlayList } from '@/api/music';
 
-// 基础状态
-const isExpanded = ref(false); // 是否展开
-const isPlaying = ref(false); // 是否播放
-const searchKeyword = ref(''); // 搜索关键词
-const searchResult = ref([]); // 搜索结果
-const volume = ref(0.7); // 音量
+// 1. 基础状态控制
+const isExpanded = ref(false); // 播放器是否展开
+const isPlaying = ref(false); // 是否正在播放
+const currentVolume = ref(0.7); // 当前音量（0-1）
 
-// 歌曲数据
-const recommendSongs = ref([
-  // 默认推荐歌曲（可替换为热门歌单）
-  { id: 1324282164, name: '小幸运', singer: '田馥甄', cover: 'https://picsum.photos/60/60?random=10', duration: 235 },
-  { id: 186016, name: '七里香', singer: '周杰伦', cover: 'https://picsum.photos/60/60?random=11', duration: 281 },
-  { id: 27843816, name: '稻香', singer: '周杰伦', cover: 'https://picsum.photos/60/60?random=12', duration: 219 }
+// 2. 歌曲数据配置（可自行修改/添加，音频文件放入 public/music 文件夹）
+const songList = ref([
+  {
+    id: 1,
+    name: "小幸运",
+    singer: "田馥甄",
+    cover: "https://picsum.photos/60/60?random=1",
+    audioUrl: "/music/little-luck.mp3" // 对应 public/music 下的文件
+  },
+  {
+    id: 2,
+    name: "七里香",
+    singer: "周杰伦",
+    cover: "https://picsum.photos/60/60?random=2",
+    audioUrl: "/music/qi-li-xiang.mp3"
+  },
+  {
+    id: 3,
+    name: "稻香",
+    singer: "周杰伦",
+    cover: "https://picsum.photos/60/60?random=3",
+    audioUrl: "/music/dao-xiang.mp3"
+  }
 ]);
-const currentSong = ref({
-  id: '', name: '暂无播放', singer: '', cover: 'https://picsum.photos/60/60?random=99', duration: 0
-});
-const playList = ref([]); // 播放列表
-const currentIndex = ref(-1); // 当前播放索引
+const currentPlayingSong = ref({}); // 当前播放歌曲
+const currentPlayIndex = ref(-1); // 当前播放歌曲索引
 
-// 音频相关
-const audio = ref(null); // 全局Audio实例
-const currentTime = ref(0); // 当前播放时间
-const duration = ref(0); // 总时长
-const progressPercent = ref(0); // 进度百分比
+// 3. 音频相关状态
+const audioInstance = ref(null); // Audio 实例
+const currentPlayTime = ref(0); // 当前播放时间（秒）
+const songTotalDuration = ref(0); // 歌曲总时长（秒）
+const progressPercent = ref(0); // 播放进度百分比
 
-// 初始化全局Audio
-onMounted(async () => {
-  // 全局单例Audio
-  if (window.globalAudio) {
-    audio.value = window.globalAudio;
-    // 恢复之前的播放状态
-    currentTime.value = audio.value.currentTime;
-    duration.value = audio.value.duration;
-    isPlaying.value = !audio.value.paused;
-  } else {
-    audio.value = new Audio();
-    window.globalAudio = audio.value;
-  }
+// 4. 初始化 Audio 实例
+onMounted(() => {
+  // 创建全局唯一 Audio 实例
+  audioInstance.value = new Audio();
+  // 设置默认音量
+  audioInstance.value.volume = currentVolume.value;
 
-  // 绑定Audio事件
-  audio.value.volume = volume.value;
-  audio.value.addEventListener('play', () => isPlaying.value = true);
-  audio.value.addEventListener('pause', () => isPlaying.value = false);
-  audio.value.addEventListener('timeupdate', updateProgress);
-  audio.value.addEventListener('loadedmetadata', () => duration.value = audio.value.duration);
-  audio.value.addEventListener('ended', playNext); // 自动下一曲
-
-  // 获取热门歌单（可选，注释掉则用默认推荐）
-  // const hotList = await getHotPlayList();
-  // recommendSongs.value = hotList;
+  // 绑定 Audio 事件
+  bindAudioEvents();
 });
 
-// 解绑事件（不销毁Audio）
+// 5. 解绑 Audio 事件，防止内存泄漏
 onUnmounted(() => {
-  if (audio.value) {
-    audio.value.removeEventListener('play', () => isPlaying.value = true);
-    audio.value.removeEventListener('pause', () => isPlaying.value = false);
-    audio.value.removeEventListener('timeupdate', updateProgress);
-    audio.value.removeEventListener('loadedmetadata', () => duration.value = audio.value.duration);
-    audio.value.removeEventListener('ended', playNext);
+  if (audioInstance.value) {
+    unbindAudioEvents();
+    // 销毁时暂停播放
+    audioInstance.value.pause();
   }
 });
 
-// 监听音量
-watch(volume, (newVal) => {
-  if (audio.value) audio.value.volume = newVal;
+// 6. 监听音量变化，实时更新
+watch(currentVolume, (newVolume) => {
+  if (audioInstance.value) {
+    audioInstance.value.volume = newVolume;
+  }
 });
 
-// 搜索歌曲
-const handleSearch = async () => {
-  if (!searchKeyword.value.trim()) return;
-  const res = await searchMusic(searchKeyword.value);
-  searchResult.value = res;
-  // 自动播放第一首
-  if (res.length) playSong(res[0]);
+// 7. 绑定 Audio 相关事件
+const bindAudioEvents = () => {
+  const audio = audioInstance.value;
+  if (!audio) return;
+
+  // 播放状态变更
+  audio.addEventListener('play', () => {
+    isPlaying.value = true;
+  });
+  audio.addEventListener('pause', () => {
+    isPlaying.value = false;
+  });
+
+  // 播放进度更新
+  audio.addEventListener('timeupdate', () => {
+    currentPlayTime.value = audio.currentTime;
+    // 计算进度百分比
+    progressPercent.value = songTotalDuration.value > 0 
+      ? (currentPlayTime.value / songTotalDuration.value) * 100 
+      : 0;
+  });
+
+  // 歌曲加载完成，获取总时长
+  audio.addEventListener('loadedmetadata', () => {
+    songTotalDuration.value = audio.duration;
+  });
+
+  // 歌曲播放结束，自动播放下一曲
+  audio.addEventListener('ended', () => {
+    playNextSong();
+  });
 };
 
-// 播放指定歌曲
-const playSong = async (song) => {
-  try {
-    // 获取播放URL
-    const url = await getSongUrl(song.id);
-    if (!url) {
-      alert('该歌曲暂无播放资源');
-      return;
-    }
+// 8. 解绑 Audio 相关事件
+const unbindAudioEvents = () => {
+  const audio = audioInstance.value;
+  if (!audio) return;
 
-    // 更新当前歌曲
-    currentSong.value = song;
-    audio.value.src = url;
-    // 更新播放列表
-    playList.value = searchResult.value.length ? searchResult.value : recommendSongs.value;
-    currentIndex.value = playList.value.findIndex(item => item.id === song.id);
-    // 开始播放
-    await audio.value.play();
-  } catch (error) {
-    console.error('播放歌曲失败：', error);
-    alert('播放失败，请重试');
+  audio.removeEventListener('play', () => {
+    isPlaying.value = true;
+  });
+  audio.removeEventListener('pause', () => {
+    isPlaying.value = false;
+  });
+  audio.removeEventListener('timeupdate', () => {
+    currentPlayTime.value = audio.currentTime;
+    progressPercent.value = songTotalDuration.value > 0 
+      ? (currentPlayTime.value / songTotalDuration.value) * 100 
+      : 0;
+  });
+  audio.removeEventListener('loadedmetadata', () => {
+    songTotalDuration.value = audio.duration;
+  });
+  audio.removeEventListener('ended', () => {
+    playNextSong();
+  });
+};
+
+// 9. 播放指定歌曲
+const playTargetSong = (song) => {
+  if (!song || !song.audioUrl) return;
+
+  // 更新当前播放歌曲和索引
+  currentPlayingSong.value = song;
+  currentPlayIndex.value = songList.value.findIndex(item => item.id === song.id);
+
+  // 更新音频地址并播放
+  const audio = audioInstance.value;
+  audio.src = song.audioUrl;
+  audio.play().catch(err => {
+    console.error('播放失败：', err);
+    alert('播放失败，请检查音频文件路径');
+  });
+};
+
+// 10. 播放/暂停切换
+const togglePlayStatus = () => {
+  const audio = audioInstance.value;
+  if (!audio || !currentPlayingSong.value.id) return;
+
+  if (audio.paused) {
+    audio.play();
+  } else {
+    audio.pause();
   }
 };
 
-// 播放/暂停
-const togglePlay = () => {
-  if (!currentSong.value.id) {
-    // 无歌曲时播放第一首推荐
-    playSong(recommendSongs.value[0]);
-    return;
-  }
-  audio.value.paused ? audio.value.play() : audio.value.pause();
+// 11. 播放上一曲
+const playPrevSong = () => {
+  if (songList.value.length === 0 || currentPlayIndex.value === -1) return;
+
+  // 计算上一曲索引（循环播放）
+  currentPlayIndex.value = (currentPlayIndex.value - 1 + songList.value.length) % songList.value.length;
+  const prevSong = songList.value[currentPlayIndex.value];
+  playTargetSong(prevSong);
 };
 
-// 上一曲
-const playPrev = () => {
-  if (playList.value.length === 0) return;
-  currentIndex.value = (currentIndex.value - 1 + playList.value.length) % playList.value.length;
-  playSong(playList.value[currentIndex.value]);
+// 12. 播放下一曲
+const playNextSong = () => {
+  if (songList.value.length === 0 || currentPlayIndex.value === -1) return;
+
+  // 计算下一曲索引（循环播放）
+  currentPlayIndex.value = (currentPlayIndex.value + 1) % songList.value.length;
+  const nextSong = songList.value[currentPlayIndex.value];
+  playTargetSong(nextSong);
 };
 
-// 下一曲
-const playNext = () => {
-  if (playList.value.length === 0) return;
-  currentIndex.value = (currentIndex.value + 1) % playList.value.length;
-  playSong(playList.value[currentIndex.value]);
-};
+// 13. 调整播放进度
+const adjustPlayProgress = (e) => {
+  const audio = audioInstance.value;
+  if (!audio || !currentPlayingSong.value.id || songTotalDuration.value === 0) return;
 
-// 更新进度
-const updateProgress = () => {
-  if (audio.value) {
-    currentTime.value = audio.value.currentTime;
-    progressPercent.value = (currentTime.value / (duration.value || 1)) * 100;
-  }
-};
-
-// 设置进度
-const setProgress = (e) => {
+  // 获取进度条容器信息
   const track = e.currentTarget;
-  const rect = track.getBoundingClientRect();
-  const percent = (e.clientX - rect.left) / rect.width;
-  audio.value.currentTime = percent * duration.value;
-  updateProgress();
+  const trackRect = track.getBoundingClientRect();
+  // 计算点击位置对应的百分比
+  const clickPercent = (e.clientX - trackRect.left) / trackRect.width;
+  // 更新播放时间
+  audio.currentTime = clickPercent * songTotalDuration.value;
+  currentPlayTime.value = audio.currentTime;
+  progressPercent.value = clickPercent * 100;
 };
 
-// 设置音量
-const setVolume = () => {
-  audio.value.volume = volume.value;
-};
-
-// 格式化时间
+// 14. 格式化时间（秒 -> 分:秒）
 const formatTime = (seconds) => {
-  if (!seconds) return '00:00';
-  const min = Math.floor(seconds / 60);
-  const sec = Math.floor(seconds % 60);
-  return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  if (!seconds || isNaN(seconds)) return '00:00';
+
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  // 补零格式化
+  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 </script>
 
 <style scoped>
-/* 核心样式：固定悬浮+渐变背景 */
+/* 核心：固定悬浮 + 初始折叠样式 */
 .music-player {
   position: fixed;
   bottom: 20px;
@@ -298,15 +308,15 @@ const formatTime = (seconds) => {
   z-index: 9999;
   background: linear-gradient(135deg, #282c34 0%, #3b3f47 100%);
   border-radius: 16px;
-  color: #fff;
+  color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease-in-out;
   width: 50px;
   height: 50px;
 }
 
-/* 展开状态：宽屏显示 */
+/* 展开状态样式 */
 .music-player.expanded {
   width: 380px;
   height: 500px;
@@ -321,49 +331,23 @@ const formatTime = (seconds) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.2s ease;
 }
 .toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 内容区 */
+/* 播放器内容区 */
 .player-content {
   display: flex;
   flex-direction: column;
   gap: 12px;
   height: 100%;
   overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-/* 搜索框 */
-.search-box {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.search-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 20px;
-  outline: none;
-  font-size: 14px;
-  color: #333;
-}
-.search-btn {
-  background: #6161ff;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-/* 歌曲列表 */
+/* 歌曲列表容器 */
 .song-list-container {
   flex: 1;
   overflow-y: auto;
@@ -372,7 +356,7 @@ const formatTime = (seconds) => {
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #ddd;
+  color: #dddddd;
 }
 .song-list {
   display: flex;
@@ -386,10 +370,10 @@ const formatTime = (seconds) => {
   padding: 8px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.2s ease;
 }
 .song-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 .song-cover {
   width: 40px;
@@ -410,13 +394,16 @@ const formatTime = (seconds) => {
 }
 .song-singer {
   font-size: 12px;
-  color: #ccc;
+  color: #cccccc;
   margin: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
 .play-icon {
+  color: #6161ff;
+}
+.playing-tag {
   color: #6161ff;
 }
 
@@ -426,7 +413,7 @@ const formatTime = (seconds) => {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
 }
 .current-cover {
@@ -449,11 +436,11 @@ const formatTime = (seconds) => {
 }
 .current-singer {
   font-size: 12px;
-  color: #ccc;
+  color: #cccccc;
   margin: 0;
 }
 
-/* 播放控制 */
+/* 播放控制按钮 */
 .player-controls {
   display: flex;
   align-items: center;
@@ -462,16 +449,20 @@ const formatTime = (seconds) => {
   margin: 8px 0;
 }
 .control-btn {
-  background: transparent;
+  background-color: transparent;
   border: none;
-  color: #fff;
+  color: #ffffff;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
-  transition: background 0.2s;
+  transition: background-color 0.2s ease;
 }
-.control-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+.control-btn:disabled {
+  color: #666666;
+  cursor: not-allowed;
+}
+.control-btn:not(:disabled):hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 .play-btn {
   width: 48px;
@@ -479,11 +470,11 @@ const formatTime = (seconds) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #6161ff;
+  background-color: #6161ff;
   box-shadow: 0 4px 12px rgba(97, 97, 255, 0.4);
 }
 
-/* 进度条 */
+/* 进度条样式 */
 .progress-bar {
   display: flex;
   flex-direction: column;
@@ -491,16 +482,16 @@ const formatTime = (seconds) => {
 }
 .progress-track {
   height: 6px;
-  background: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
   position: relative;
   cursor: pointer;
 }
 .progress-fill {
   height: 100%;
-  background: #6161ff;
+  background-color: #6161ff;
   border-radius: 3px;
-  transition: width 0.1s;
+  transition: width 0.1s linear;
 }
 .progress-thumb {
   position: absolute;
@@ -508,7 +499,7 @@ const formatTime = (seconds) => {
   transform: translate(-50%, -50%);
   width: 14px;
   height: 14px;
-  background: #6161ff;
+  background-color: #6161ff;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(97, 97, 255, 0.6);
 }
@@ -518,7 +509,7 @@ const formatTime = (seconds) => {
 }
 .time-text {
   font-size: 12px;
-  color: #ccc;
+  color: #cccccc;
 }
 
 /* 音量控制 */
@@ -540,15 +531,15 @@ const formatTime = (seconds) => {
   width: 4px;
 }
 .player-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 2px;
 }
 .player-content::-webkit-scrollbar-thumb {
-  background: #6161ff;
+  background-color: #6161ff;
   border-radius: 2px;
 }
 
-/* 响应式 */
+/* 响应式适配手机端 */
 @media (max-width: 480px) {
   .music-player.expanded {
     width: 320px;
