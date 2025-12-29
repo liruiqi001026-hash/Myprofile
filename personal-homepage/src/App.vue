@@ -5,7 +5,7 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <template>
   <router-view></router-view>
-
+  <MusicPlayer />
 </template>
 
 <style>
