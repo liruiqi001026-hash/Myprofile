@@ -1,9 +1,12 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
+import MusicPlayer from './components/MusicPlayer.vue';
 </script>
 
 <template>
   <router-view></router-view>
+  <!-- 全局音乐播放器（常驻） -->
+  <MusicPlayer />
 </template>
 
 <style>
@@ -35,5 +38,14 @@ a {
 }
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #42b883aa);
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: "Microsoft Yahei", sans-serif;
+  background: #f5f5f5;
 }
 </style>

@@ -1,36 +1,31 @@
-const express = require('express')
-const cors = require('cors')
-const pool = require('./db')
-require('dotenv').config()
+const express = require('express');
+const cors = require('cors');
+const aiRouter = require('./routes/ai');
+require('dotenv').config();
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const app = express();
+const PORT = process.env.SERVER_PORT || 3000;
 
-// 中间件
-app.use(cors())
-app.use(express.json())
+// 跨域配置（允许前端本地调试）
+app.use(cors({
+  origin: '*', // 生产环境建议限定为你的前端域名，如http://localhost:8080
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
 
-// 接口：获取个人信息
-app.get('/api/user', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM user LIMIT 1')
-    res.json({ code: 200, data: rows[0] || {} })
-  } catch (err) {
-    res.status(500).json({ code: 500, msg: '服务器错误' })
-  }
-})
+// 解析JSON请求体
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// 接口：获取作品列表
-app.get('/api/works', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM works ORDER BY create_time DESC')
-    res.json({ code: 200, data: rows })
-  } catch (err) {
-    res.status(500).json({ code: 500, msg: '服务器错误' })
-  }
-})
+// 挂载AI接口
+app.use('/api/ai', aiRouter);
+
+// 测试接口
+app.get('/', (req, res) => {
+  res.send('王小染对话后端服务已启动 ✨');
+});
 
 // 启动服务
 app.listen(PORT, () => {
-  console.log(`后端服务运行在：http://localhost:${PORT}`)
-})
+  console.log(`✅ 后端服务运行在：http://localhost:${PORT}`);
+});

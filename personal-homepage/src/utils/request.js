@@ -1,29 +1,28 @@
-import axios from 'axios'
+// src/utils/request.js
+import axios from 'axios';
 
+// 创建axios实例，配合Vite代理转发到后端3000端口
 const request = axios.create({
-  // 本地后端接口地址，部署时改为服务器IP/域名
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
-  timeout: 5000
-})
-
-// 请求拦截器
-request.interceptors.request.use(
-  config => {
-    return config
-  },
-  error => {
-    return Promise.reject(error)
+  baseURL: '/api', // 关键：和Vite代理的/api匹配
+  timeout: 10000,  // 超时时间（星火API响应稍慢，设10秒）
+  headers: {
+    'Content-Type': 'application/json'
   }
-)
+});
 
-// 响应拦截器
+// 响应拦截器：只返回后端的data部分，简化前端处理
 request.interceptors.response.use(
-  response => {
-    return response.data
-  },
-  error => {
-    return Promise.reject(error)
+  (response) => response.data,
+  (error) => {
+    console.error('请求出错：', error);
+    // 兜底返回，避免前端崩溃
+    return Promise.reject({
+      code: 500,
+      msg: '请求失败',
+      data: null
+    });
   }
-)
+);
 
-export default request
+// 导出实例，供组件导入使用
+export default request;
