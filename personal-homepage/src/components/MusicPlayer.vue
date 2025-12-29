@@ -109,25 +109,11 @@ const currentVolume = ref(0.7); // 当前音量（0-1）
 const songList = ref([
   {
     id: 1,
-    name: "小幸运",
-    singer: "田馥甄",
+    name: "离开我的依赖",
+    singer: "王艳薇",
     cover: "https://picsum.photos/60/60?random=1",
-    audioUrl: "/music/little-luck.mp3" // 对应 public/music 下的文件
+    audioUrl: "/music/likaiwodeyilai.mp3" // 对应 public/music 下的文件
   },
-  {
-    id: 2,
-    name: "七里香",
-    singer: "周杰伦",
-    cover: "https://picsum.photos/60/60?random=2",
-    audioUrl: "/music/qi-li-xiang.mp3"
-  },
-  {
-    id: 3,
-    name: "稻香",
-    singer: "周杰伦",
-    cover: "https://picsum.photos/60/60?random=3",
-    audioUrl: "/music/dao-xiang.mp3"
-  }
 ]);
 const currentPlayingSong = ref({}); // 当前播放歌曲
 const currentPlayIndex = ref(-1); // 当前播放歌曲索引
