@@ -1,7 +1,7 @@
 <template>
   <!-- 全局悬浮音乐播放器 -->
   <div class="music-player" :class="{ expanded: isExpanded }">
-    <!-- 折叠/展开按钮 -->
+    <!-- 折叠/展开按钮（仅折叠状态显示） -->
     <div class="toggle-btn" @click="isExpanded = !isExpanded">
       <svg v-if="!isExpanded" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 5V19M16 5V19" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
@@ -13,6 +13,13 @@
 
     <!-- 展开后的完整播放器 -->
     <div class="player-content" v-if="isExpanded">
+      <!-- 新增顶部折叠按钮（优化体验） -->
+      <div class="top-toggle-btn" @click="isExpanded = !isExpanded">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 5H18M6 19H18" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+
       <!-- 歌曲列表 -->
       <div class="song-list-container">
         <div class="list-title">
@@ -309,7 +316,7 @@ const formatTime = (seconds) => {
   padding: 15px;
 }
 
-/* 折叠/展开按钮 */
+/* 折叠/展开按钮：仅折叠状态显示 */
 .toggle-btn {
   width: 100%;
   height: 100%;
@@ -319,8 +326,24 @@ const formatTime = (seconds) => {
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
+/* 关键修复：播放器展开后隐藏底部按钮 */
+.music-player.expanded .toggle-btn {
+  display: none;
+}
 .toggle-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 新增：顶部折叠按钮样式 */
+.top-toggle-btn {
+  display: flex;
+  justify-content: flex-end;
+  cursor: pointer;
+  padding: 4px 0 8px 0;
+  transition: transform 0.2s ease;
+}
+.top-toggle-btn:hover {
+  transform: scale(1.05);
 }
 
 /* 播放器内容区 */
